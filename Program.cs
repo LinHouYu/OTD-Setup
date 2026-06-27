@@ -226,9 +226,6 @@ if (File.Exists(daemonPath))
     }
 }
 
-Console.WriteLine("\n全部部署完成！按任意键退出...");
-Console.ReadKey();
-
 async Task InstallOtdPluginAsync(string owner, string repo, string assetName, string pluginName, string description)
 {
     string pluginsDir = Path.Combine(otdExtractDir, "userdata", "Plugins");
@@ -305,3 +302,50 @@ async Task DownloadAsync(string url, string path, int timeoutSeconds = 0)
     }
     Console.WriteLine();
 }
+
+Console.WriteLine("\n[7/7] 正在创建桌面快捷方式并配置开机自启...");
+
+string uxPath = Path.Combine(otdExtractDir, "OpenTabletDriver.UX.Wpf.exe");
+
+if (File.Exists(uxPath))
+{
+    try
+    {
+        string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        string shortcutPath = Path.Combine(desktopPath, "OpenTabletDriver.lnk");
+
+        Type wscriptShellType = Type.GetTypeFromProgID("WScript.Shell")!;
+        dynamic shell = Activator.CreateInstance(wscriptShellType)!;
+        dynamic shortcut = shell.CreateShortcut(shortcutPath);
+
+        shortcut.TargetPath = uxPath;
+        shortcut.WorkingDirectory = otdExtractDir;
+        shortcut.Description = "OpenTabletDriver 数位板驱动";
+        shortcut.Save();
+
+        Console.WriteLine("-> 桌面快捷方式创建成功！");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"-> 桌面快捷方式创建失败: {ex.Message}");
+    }
+    try
+    {
+        using Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true)!;
+        key.SetValue("OpenTabletDriver", $"\"{uxPath}\" --hidden");
+
+        Console.WriteLine("-> 开机自启 (静默隐藏到托盘) 配置成功！");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"-> 开机自启配置失败: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("-> 未找到 OpenTabletDriver.UX.Wpf.exe，跳过快捷方式创建。");
+}
+
+
+Console.WriteLine("\n全部部署完成！按任意键退出...");
+Console.ReadKey();
