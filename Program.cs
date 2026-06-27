@@ -303,5 +303,74 @@ async Task DownloadAsync(string url, string path, int timeoutSeconds = 0)
     Console.WriteLine();
 }
 
+Console.WriteLine("\n[7/7] 正在配置开机自启 (部署静默最小化策略)...");
+
+string uxPath = Path.Combine(otdExtractDir, "OpenTabletDriver.UX.Wpf.exe");
+string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+
+if (File.Exists(uxPath))
+{
+    string oldLnk = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.lnk");
+    string oldVbs = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.vbs");
+    string oldBat = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.bat");
+    if (File.Exists(oldLnk)) File.Delete(oldLnk);
+    if (File.Exists(oldVbs)) File.Delete(oldVbs);
+    if (File.Exists(oldBat)) File.Delete(oldBat);
+
+    try
+    {
+        string batLauncherPath = Path.Combine(otdExtractDir, "OTD_AutoLauncher.bat");
+        string batContent = $"""
+        @echo off
+        timeout /t 3 /nobreak >nul
+        cd /d "{otdExtractDir}"
+        start /min "" "OpenTabletDriver.UX.Wpf.exe"
+        exit
+        """;
+        File.WriteAllText(batLauncherPath, batContent, System.Text.Encoding.Default);
+
+        string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "OpenTabletDriver.lnk");
+
+        string psScript = $"""
+        $wshell = New-Object -ComObject WScript.Shell
+        
+        $desk = $wshell.CreateShortcut('{desktopLnk}')
+        $desk.TargetPath = '{uxPath}'
+        $desk.WorkingDirectory = '{otdExtractDir}'
+        $desk.Save()
+        
+        $start = $wshell.CreateShortcut('{oldLnk}')
+        $start.TargetPath = '{batLauncherPath}'
+        $start.WorkingDirectory = '{otdExtractDir}'
+        $start.WindowStyle = 7 
+        $start.Save()
+        """;
+
+        string inlineScript = psScript.Replace("\r\n", ";").Replace("\n", ";");
+        using var psProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -Command \"{inlineScript}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            }
+        };
+        psProcess.Start();
+        psProcess.WaitForExit();
+
+        Console.WriteLine("-> 开机自启 (最小化触发托盘) 配置成功！黑框已被完全隐藏。");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"-> 开机自启配置失败: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("-> 未找到 OpenTabletDriver.UX.Wpf.exe，跳过配置。");
+}
+
 Console.WriteLine("\n全部部署完成！按任意键退出...");
 Console.ReadKey();

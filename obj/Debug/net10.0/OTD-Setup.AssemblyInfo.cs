@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OTD-Setup")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6b69f43f104ba5aedab10f02d9833ae59bb7760a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+403be5c8d1d4f81ebca9eeca392f8ee7995d9882")]
 [assembly: System.Reflection.AssemblyProductAttribute("OTD-Setup")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OTD-Setup")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
