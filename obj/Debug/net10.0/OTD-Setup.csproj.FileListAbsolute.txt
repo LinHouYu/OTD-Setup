@@ -1,0 +1,14 @@
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\bin\Debug\net10.0\OTD-Setup.exe
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\bin\Debug\net10.0\OTD-Setup.deps.json
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\bin\Debug\net10.0\OTD-Setup.runtimeconfig.json
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\bin\Debug\net10.0\OTD-Setup.dll
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\bin\Debug\net10.0\OTD-Setup.pdb
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.AssemblyInfoInputs.cache
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.AssemblyInfo.cs
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.csproj.CoreCompileInputs.cache
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.dll
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\refint\OTD-Setup.dll
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.pdb
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.genruntimeconfig.cache
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\ref\OTD-Setup.dll
