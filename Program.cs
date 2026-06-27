@@ -3,7 +3,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 
-Console.WriteLine("✨ OTD 环境一键极速部署工具 ✨\n");
+Console.WriteLine("OTD 环境一键极速部署工具\n");
 
 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
 string dotNetPath = Path.Combine(baseDir, "net8-installer.exe");
@@ -155,7 +155,7 @@ if (File.Exists(daemonPath))
     }
 }
 
-Console.WriteLine("\n✨ 全部部署完成！按任意键退出...");
+Console.WriteLine("\n全部部署完成！按任意键退出...");
 Console.ReadKey();
 
 
