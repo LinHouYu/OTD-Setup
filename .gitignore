@@ -1,0 +1,8 @@
+[Bb]in/
+[Oo]bj/
+
+OpenTabletDriver/
+VMultiTemp/
+*.zip
+
+*.exe

@@ -12,3 +12,4 @@ C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\refint\OTD-Se
 C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.pdb
 C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.genruntimeconfig.cache
 C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\ref\OTD-Setup.dll
+C:\Users\zhishifenzi\Desktop\OTD-Setup\OTD-Setup\obj\Debug\net10.0\OTD-Setup.sourcelink.json
