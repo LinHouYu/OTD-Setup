@@ -9,7 +9,7 @@
 使用以下链接即可直接下载最新版本的安装程序。
 
 **最新版直连下载：**
-> `https://github.com/LinHouYu/OTD-Setup/releases/latest/download/OTD-Setup.exe`
+> `https://github.com/LinHouYu/OTD-Setup/releases/download/1.0.1/OTD-Setup.zip`
 
 **加速下载节点：**
 若由于网络环境导致上述链接下载缓慢，请在上述下载链接前，直接拼接以下任意一个加速节点的前缀：
@@ -17,7 +17,7 @@
 2. `https://github.moeyy.xyz/`
 3. `https://hub.gitmirror.com/`
 
-*(使用示例：`https://ghproxy.net/https://github.com/LinHouYu/OTD-Setup/releases/latest/download/OTD-Setup.exe`)*
+*(使用示例：`https://ghproxy.net/https://github.com/LinHouYu/OTD-Setup/releases/download/1.0.1/OTD-Setup.zip`)*
 
 ## 🚀 使用说明
 本程序已实现“自包含”，无需配置任何复杂的 .NET 环境。
