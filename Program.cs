@@ -32,7 +32,7 @@ catch
 
 if (!File.Exists(dotNetPath))
 {
-    Console.WriteLine("[1/6] 下载 .NET 8 桌面运行环境...");
+    Console.WriteLine("[1/7] 下载 .NET 8 桌面运行环境...");
     await DownloadAsync("https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/8.0.28/windowsdesktop-runtime-8.0.28-win-x64.exe", dotNetPath);
 }
 
@@ -41,7 +41,7 @@ string otdZipPath = existingZips.Length > 0 ? existingZips[0] : Path.Combine(bas
 
 if (!Directory.Exists(otdExtractDir) && !File.Exists(otdZipPath))
 {
-    Console.WriteLine($"\n[2/6] 下载 OTD {versionTag}...");
+    Console.WriteLine($"\n[2/7] 下载 OTD {versionTag}...");
     string[] proxies = ["https://gh-proxy.com/", "https://github.akams.cn/", "https://ghproxy.net/", ""];
     foreach (var proxy in proxies)
     {
@@ -58,7 +58,7 @@ if (!Directory.Exists(otdExtractDir) && !File.Exists(otdZipPath))
 
 if (File.Exists(otdZipPath) && !Directory.Exists(otdExtractDir))
 {
-    Console.WriteLine("\n[3/6] 正在解压 OTD 并处理嵌套目录...");
+    Console.WriteLine("\n[3/7] 正在解压 OTD 并处理嵌套目录...");
     ZipFile.ExtractToDirectory(otdZipPath, otdExtractDir);
     File.Delete(otdZipPath);
 
@@ -72,7 +72,7 @@ if (File.Exists(otdZipPath) && !Directory.Exists(otdExtractDir))
     }
 }
 
-Console.WriteLine("\n[4/6] 部署环境 (安装 .NET 8 并配置 OTD 便携模式)...");
+Console.WriteLine("\n[4/7] 部署环境 (安装 .NET 8 并配置 OTD 便携模式)...");
 if (File.Exists(dotNetPath))
 {
     try
@@ -98,10 +98,9 @@ if (File.Exists(batPath))
     if (File.Exists(migratedSettings)) File.Delete(migratedSettings);
 }
 
-Console.WriteLine("\n[5/6] 检查 VMulti 驱动状态...");
+Console.WriteLine("\n[5/7] 检查 VMulti 驱动状态 (防止蓝屏)...");
 try
 {
-    // 优化：先通过命令检查系统中是否已经存在 vmulti 驱动，防止重复安装导致蓝屏
     bool needInstallVMulti = true;
     using (var checkProc = new Process())
     {
@@ -116,18 +115,17 @@ try
 
         if (!string.IsNullOrWhiteSpace(output))
         {
-            Console.WriteLine("-> 检测到系统已安装 VMulti 驱动，跳过安装以保证系统安全。");
+            Console.WriteLine("-> 检测到系统已安装 VMulti 驱动，跳过重复安装。");
             needInstallVMulti = false;
         }
     }
 
     if (needInstallVMulti)
     {
-        Console.WriteLine("-> 未检测到 VMulti 驱动，准备下载安装...");
+        Console.WriteLine("-> 准备下载安装 VMulti 驱动...");
         var vJsonString = await client.GetStringAsync("https://api.github.com/repos/X9VoiD/vmulti-bin/releases/latest");
         var vJson = JsonNode.Parse(vJsonString ?? "{}");
         var vAsset = vJson?["assets"]?.AsArray().FirstOrDefault(a => a?["name"]?.ToString() == "VMulti.Driver.zip");
-
         if (vAsset != null)
         {
             string vZip = Path.Combine(baseDir, "VMulti.Driver.zip");
@@ -147,13 +145,11 @@ try
                 string vBat = Path.Combine(vExt, "install_hiddriver.bat");
                 if (File.Exists(vBat))
                 {
-                    Console.WriteLine("警告：接下来将安装底层驱动，若有反作弊软件(如Vanguard)请先关闭！");
                     Console.WriteLine("-> 请求管理员权限安装驱动 (如有黑框提示请按回车)...");
                     try
                     {
                         using var vp = Process.Start(new ProcessStartInfo { FileName = vBat, WorkingDirectory = vExt, UseShellExecute = true, Verb = "runas" });
                         vp?.WaitForExit();
-                        Console.WriteLine("-> 驱动安装指令执行完毕。");
                     }
                     catch { Console.WriteLine("-> 用户取消了驱动安装。"); }
                 }
@@ -162,12 +158,9 @@ try
         }
     }
 }
-catch (Exception ex)
-{
-    Console.WriteLine($"-> 检查或安装驱动时出现异常: {ex.Message}");
-}
+catch (Exception ex) { Console.WriteLine($"-> 驱动检查异常: {ex.Message}"); }
 
-Console.WriteLine("\n[6/6] 安装插件与注入预设...");
+Console.WriteLine("\n[6/7] 安装插件与注入预设...");
 await InstallOtdPluginAsync("OpenTabletDriver", "TabletDriverFilters", "HawkuFilters.zip", "HawkuFilters", "Ported hawku/TabletDriver interpolators");
 await InstallOtdPluginAsync("Kuuuube", "VoiDPlugins", "VMultiMode.zip", "VMultiMode", "Classic VMulti Output Mode");
 
@@ -187,9 +180,7 @@ if (File.Exists(daemonPath))
     }
 
     await Task.Delay(2000);
-
     try { daemonProcess?.Kill(); } catch { }
-
     await Task.Delay(1000);
 
     if (File.Exists(settingsPath))
@@ -240,21 +231,108 @@ if (File.Exists(daemonPath))
                         }
                     }
                 }
-
                 await File.WriteAllTextAsync(settingsPath, json.ToJsonString(new() { WriteIndented = true }));
                 Console.WriteLine("-> 预设智能注入成功！(已保留当前数位板专属配置)");
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) { Console.WriteLine($"-> 预设注入失败: {ex.Message}"); }
+    }
+    else { Console.WriteLine("-> 依然未找到 settings.json，跳过注入。"); }
+}
+
+Console.WriteLine("\n[7/7] 配置桌面快捷方式与隐藏自启 (强力清洗历史注册表)...");
+string uxPath = Path.Combine(otdExtractDir, "OpenTabletDriver.UX.Wpf.exe");
+
+if (File.Exists(uxPath))
+{
+    try
+    {
+        string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        string userStartup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        string commonStartup = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup);
+
+        string desktopLnk = Path.Combine(desktopDir, "OpenTabletDriver.lnk");
+        string localLnk = Path.Combine(otdExtractDir, "OpenTabletDriver_AutoStart.lnk");
+
+        string[] oldShortcuts = {
+            Path.Combine(userStartup, "OpenTabletDriver.UX.Wpf.exe.lnk"),
+            Path.Combine(commonStartup, "OpenTabletDriver.UX.Wpf.exe.lnk"),
+            Path.Combine(userStartup, "OpenTabletDriver_AutoStart.lnk"),
+            Path.Combine(commonStartup, "OpenTabletDriver_AutoStart.lnk"),
+            Path.Combine(userStartup, "OpenTabletDriver.lnk"),
+            Path.Combine(commonStartup, "OpenTabletDriver.lnk")
+        };
+        foreach (var sc in oldShortcuts) { if (File.Exists(sc)) File.Delete(sc); }
+
+        string psScript = $$"""
+        $wshell = New-Object -ComObject WScript.Shell
+        
+        $desk = $wshell.CreateShortcut('{{desktopLnk}}')
+        $desk.TargetPath = '{{uxPath}}'
+        $desk.WorkingDirectory = '{{otdExtractDir}}'
+        $desk.WindowStyle = 1
+        $desk.Save()
+        
+        $local = $wshell.CreateShortcut('{{localLnk}}')
+        $local.TargetPath = '{{uxPath}}'
+        $local.WorkingDirectory = '{{otdExtractDir}}'
+        $local.WindowStyle = 7
+        $local.Save()
+        
+        $paths = @(
+            'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run',
+            'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run',
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run',
+            'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder',
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder'
+        )
+        foreach ($p in $paths) {
+            if (Test-Path $p) {
+                (Get-Item $p).GetValueNames() | Where-Object { $_ -match 'OpenTabletDriver' } | ForEach-Object {
+                    Remove-ItemProperty -Path $p -Name $_ -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        """;
+
+        using var psProcess = new Process
         {
-            Console.WriteLine($"-> 预设注入失败: {ex.Message}");
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile",
+                RedirectStandardInput = true,
+                CreateNoWindow = true,
+                UseShellExecute = false
+            }
+        };
+        psProcess.Start();
+        psProcess.StandardInput.WriteLine(psScript);
+        psProcess.StandardInput.Close();
+        psProcess.WaitForExit();
+
+        Console.WriteLine("-> 快捷方式生成与防拦截策略部署成功！");
+
+        string startupLnk = Path.Combine(commonStartup, "OpenTabletDriver_AutoStart.lnk");
+        try
+        {
+            File.Copy(localLnk, startupLnk, true);
+            Console.WriteLine("-> 隐藏自启 (Common) 部署成功！");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            startupLnk = Path.Combine(userStartup, "OpenTabletDriver_AutoStart.lnk");
+            File.Copy(localLnk, startupLnk, true);
+            Console.WriteLine("-> 隐藏自启 (User) 部署成功！");
         }
     }
-    else
-    {
-        Console.WriteLine("-> 依然未找到 settings.json，可能是数位板未插入，跳过注入。");
-    }
+    catch (Exception ex) { Console.WriteLine($"-> 自启部署失败: {ex.Message}"); }
 }
+else { Console.WriteLine("-> 未找到 OTD 主程序，跳过自启配置。"); }
+
+Console.WriteLine("\n全部部署完成！按任意键退出...");
+Console.ReadKey();
+
 
 async Task InstallOtdPluginAsync(string owner, string repo, string assetName, string pluginName, string description)
 {
@@ -332,8 +410,3 @@ async Task DownloadAsync(string url, string path, int timeoutSeconds = 0)
     }
     Console.WriteLine();
 }
-
-
-
-Console.WriteLine("\n全部部署完成！按任意键退出...");
-Console.ReadKey();
