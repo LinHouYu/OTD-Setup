@@ -3,7 +3,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 
-Console.WriteLine("OTD 环境一键极速部署工具\n");
+Console.WriteLine("OTD 环境一键极速部署工具 By LinHouYu\n");
 
 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
 string dotNetPath = Path.Combine(baseDir, "net8-installer.exe");
@@ -98,44 +98,74 @@ if (File.Exists(batPath))
     if (File.Exists(migratedSettings)) File.Delete(migratedSettings);
 }
 
-Console.WriteLine("\n[5/6] 检查/安装 VMulti 驱动...");
+Console.WriteLine("\n[5/6] 检查 VMulti 驱动状态...");
 try
 {
-    var vJsonString = await client.GetStringAsync("https://api.github.com/repos/X9VoiD/vmulti-bin/releases/latest");
-    var vJson = JsonNode.Parse(vJsonString ?? "{}");
-    var vAsset = vJson?["assets"]?.AsArray().FirstOrDefault(a => a?["name"]?.ToString() == "VMulti.Driver.zip");
-    if (vAsset != null)
+    // 优化：先通过命令检查系统中是否已经存在 vmulti 驱动，防止重复安装导致蓝屏
+    bool needInstallVMulti = true;
+    using (var checkProc = new Process())
     {
-        string vZip = Path.Combine(baseDir, "VMulti.Driver.zip");
-        string vExt = Path.Combine(baseDir, "VMultiTemp");
-        string vDlUrl = vAsset["browser_download_url"]?.ToString() ?? "";
+        checkProc.StartInfo.FileName = "cmd.exe";
+        checkProc.StartInfo.Arguments = "/c driverquery | findstr /i vmulti";
+        checkProc.StartInfo.UseShellExecute = false;
+        checkProc.StartInfo.RedirectStandardOutput = true;
+        checkProc.StartInfo.CreateNoWindow = true;
+        checkProc.Start();
+        string output = checkProc.StandardOutput.ReadToEnd();
+        checkProc.WaitForExit();
 
-        foreach (var proxy in new[] { "https://gh-proxy.com/", "https://github.akams.cn/", "https://ghproxy.net/", "" })
+        if (!string.IsNullOrWhiteSpace(output))
         {
-            try { await DownloadAsync(proxy + vDlUrl, vZip, string.IsNullOrEmpty(proxy) ? 0 : 5); break; } catch { }
+            Console.WriteLine("-> 检测到系统已安装 VMulti 驱动，跳过安装以保证系统安全。");
+            needInstallVMulti = false;
         }
+    }
 
-        if (File.Exists(vZip))
+    if (needInstallVMulti)
+    {
+        Console.WriteLine("-> 未检测到 VMulti 驱动，准备下载安装...");
+        var vJsonString = await client.GetStringAsync("https://api.github.com/repos/X9VoiD/vmulti-bin/releases/latest");
+        var vJson = JsonNode.Parse(vJsonString ?? "{}");
+        var vAsset = vJson?["assets"]?.AsArray().FirstOrDefault(a => a?["name"]?.ToString() == "VMulti.Driver.zip");
+
+        if (vAsset != null)
         {
-            if (Directory.Exists(vExt)) Directory.Delete(vExt, true);
-            ZipFile.ExtractToDirectory(vZip, vExt);
-            File.Delete(vZip);
-            string vBat = Path.Combine(vExt, "install_hiddriver.bat");
-            if (File.Exists(vBat))
+            string vZip = Path.Combine(baseDir, "VMulti.Driver.zip");
+            string vExt = Path.Combine(baseDir, "VMultiTemp");
+            string vDlUrl = vAsset["browser_download_url"]?.ToString() ?? "";
+
+            foreach (var proxy in new[] { "https://gh-proxy.com/", "https://github.akams.cn/", "https://ghproxy.net/", "" })
             {
-                Console.WriteLine("-> 请求管理员权限安装驱动 (如有黑框提示请按回车)...");
-                try
-                {
-                    using var vp = Process.Start(new ProcessStartInfo { FileName = vBat, WorkingDirectory = vExt, UseShellExecute = true, Verb = "runas" });
-                    vp?.WaitForExit();
-                }
-                catch { }
+                try { await DownloadAsync(proxy + vDlUrl, vZip, string.IsNullOrEmpty(proxy) ? 0 : 5); break; } catch { }
             }
-            try { Directory.Delete(vExt, true); } catch { }
+
+            if (File.Exists(vZip))
+            {
+                if (Directory.Exists(vExt)) Directory.Delete(vExt, true);
+                ZipFile.ExtractToDirectory(vZip, vExt);
+                File.Delete(vZip);
+                string vBat = Path.Combine(vExt, "install_hiddriver.bat");
+                if (File.Exists(vBat))
+                {
+                    Console.WriteLine("⚠️ 警告：接下来将安装底层驱动，若有反作弊软件(如Vanguard)请先关闭！");
+                    Console.WriteLine("-> 请求管理员权限安装驱动 (如有黑框提示请按回车)...");
+                    try
+                    {
+                        using var vp = Process.Start(new ProcessStartInfo { FileName = vBat, WorkingDirectory = vExt, UseShellExecute = true, Verb = "runas" });
+                        vp?.WaitForExit();
+                        Console.WriteLine("-> 驱动安装指令执行完毕。");
+                    }
+                    catch { Console.WriteLine("-> 用户取消了驱动安装。"); }
+                }
+                try { Directory.Delete(vExt, true); } catch { }
+            }
         }
     }
 }
-catch { }
+catch (Exception ex)
+{
+    Console.WriteLine($"-> 检查或安装驱动时出现异常: {ex.Message}");
+}
 
 Console.WriteLine("\n[6/6] 安装插件与注入预设...");
 await InstallOtdPluginAsync("OpenTabletDriver", "TabletDriverFilters", "HawkuFilters.zip", "HawkuFilters", "Ported hawku/TabletDriver interpolators");
@@ -303,74 +333,7 @@ async Task DownloadAsync(string url, string path, int timeoutSeconds = 0)
     Console.WriteLine();
 }
 
-Console.WriteLine("\n[7/7] 正在配置开机自启 (部署静默最小化策略)...");
 
-string uxPath = Path.Combine(otdExtractDir, "OpenTabletDriver.UX.Wpf.exe");
-string startupPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-
-if (File.Exists(uxPath))
-{
-    string oldLnk = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.lnk");
-    string oldVbs = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.vbs");
-    string oldBat = Path.Combine(startupPath, "OpenTabletDriver_AutoStart.bat");
-    if (File.Exists(oldLnk)) File.Delete(oldLnk);
-    if (File.Exists(oldVbs)) File.Delete(oldVbs);
-    if (File.Exists(oldBat)) File.Delete(oldBat);
-
-    try
-    {
-        string batLauncherPath = Path.Combine(otdExtractDir, "OTD_AutoLauncher.bat");
-        string batContent = $"""
-        @echo off
-        timeout /t 3 /nobreak >nul
-        cd /d "{otdExtractDir}"
-        start /min "" "OpenTabletDriver.UX.Wpf.exe"
-        exit
-        """;
-        File.WriteAllText(batLauncherPath, batContent, System.Text.Encoding.Default);
-
-        string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "OpenTabletDriver.lnk");
-
-        string psScript = $"""
-        $wshell = New-Object -ComObject WScript.Shell
-        
-        $desk = $wshell.CreateShortcut('{desktopLnk}')
-        $desk.TargetPath = '{uxPath}'
-        $desk.WorkingDirectory = '{otdExtractDir}'
-        $desk.Save()
-        
-        $start = $wshell.CreateShortcut('{oldLnk}')
-        $start.TargetPath = '{batLauncherPath}'
-        $start.WorkingDirectory = '{otdExtractDir}'
-        $start.WindowStyle = 7 
-        $start.Save()
-        """;
-
-        string inlineScript = psScript.Replace("\r\n", ";").Replace("\n", ";");
-        using var psProcess = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -Command \"{inlineScript}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false
-            }
-        };
-        psProcess.Start();
-        psProcess.WaitForExit();
-
-        Console.WriteLine("-> 开机自启 (最小化触发托盘) 配置成功！黑框已被完全隐藏。");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"-> 开机自启配置失败: {ex.Message}");
-    }
-}
-else
-{
-    Console.WriteLine("-> 未找到 OpenTabletDriver.UX.Wpf.exe，跳过配置。");
-}
 
 Console.WriteLine("\n全部部署完成！按任意键退出...");
 Console.ReadKey();
