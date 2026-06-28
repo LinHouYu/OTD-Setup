@@ -147,7 +147,7 @@ try
                 string vBat = Path.Combine(vExt, "install_hiddriver.bat");
                 if (File.Exists(vBat))
                 {
-                    Console.WriteLine("⚠️ 警告：接下来将安装底层驱动，若有反作弊软件(如Vanguard)请先关闭！");
+                    Console.WriteLine("警告：接下来将安装底层驱动，若有反作弊软件(如Vanguard)请先关闭！");
                     Console.WriteLine("-> 请求管理员权限安装驱动 (如有黑框提示请按回车)...");
                     try
                     {
